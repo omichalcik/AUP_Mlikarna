@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.13">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4026.21">
   <POU Name="Draining" Id="{a501d01f-bc41-415b-8bb8-19a7a35d7bf8}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK Draining
 VAR_INPUT
@@ -18,7 +18,7 @@ END_VAR
     <Implementation>
       <ST><![CDATA[{region "Aut/Man"}
     // switching state of engine - automatic or manual control (default state is manual)
-  
+  	// test
 {endregion}
 
 {region "ManCtrl"}
@@ -65,20 +65,5 @@ END_IF;
 //Ponechte pro moznost retezeni volani bloku v LAD
 doEnabled := diEnabled;]]></ST>
     </Implementation>
-    <LineIds Name="Draining">
-      <LineId Id="10" Count="1" />
-      <LineId Id="24" Count="10" />
-      <LineId Id="76" Count="5" />
-      <LineId Id="95" Count="0" />
-      <LineId Id="97" Count="3" />
-      <LineId Id="112" Count="4" />
-      <LineId Id="123" Count="1" />
-      <LineId Id="126" Count="0" />
-      <LineId Id="154" Count="11" />
-      <LineId Id="138" Count="0" />
-      <LineId Id="153" Count="0" />
-      <LineId Id="139" Count="0" />
-      <LineId Id="9" Count="0" />
-    </LineIds>
   </POU>
 </TcPlcObject>
