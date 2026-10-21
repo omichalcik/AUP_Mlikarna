@@ -18,7 +18,7 @@ END_VAR
     <Implementation>
       <ST><![CDATA[{region "Aut/Man"}
     // switching state of engine - automatic or manual control (default state is manual)
-  	// test
+  	// test test
 {endregion}
 
 {region "ManCtrl"}
