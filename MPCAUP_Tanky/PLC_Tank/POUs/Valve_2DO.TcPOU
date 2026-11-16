@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.13">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.16">
   <POU Name="Valve_2DO" Id="{86469f36-9490-4936-ae7d-f4831ca2b758}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK Valve_2DO
 VAR_INPUT
@@ -30,9 +30,22 @@ END_VAR
 {endregion}
 
 	 
-{region "Manual/Automat"}
-	// switching state of engine - automatic or manual control (default state is manual)
-	
+{region "REGION Aut/Man"}
+    // switching state of engine - automatic or manual control (default state is manual)
+  	IF ioValStruct.Cmd.ManCtrl THEN
+      	ioValStruct.State.ManCtrl := TRUE;
+		ioValStruct.State.AutCtrl := FALSE;
+	ELSIF ioValStruct.Cmd.AutCtrl THEN
+        ioValStruct.State.ManCtrl := FALSE;
+		ioValStruct.State.AutCtrl := TRUE; 
+    END_IF;
+		 
+	IF (NOT ioValStruct.State.AutCtrl AND NOT ioValStruct.State.ManCtrl) THEN
+		ioValStruct.State.ManCtrl := TRUE;
+	END_IF
+
+	ioValStruct.Cmd.ManCtrl := FALSE;
+	ioValStruct.Cmd.AutCtrl := FALSE;
 {endregion}
 	 
 {region "MayRun / MayAutoRun"}
@@ -156,9 +169,7 @@ oClose := ioValStruct.State.CloseOut;
       <LineId Id="305" Count="0" />
       <LineId Id="304" Count="0" />
       <LineId Id="54" Count="0" />
-      <LineId Id="9" Count="0" />
-      <LineId Id="103" Count="0" />
-      <LineId Id="109" Count="0" />
+      <LineId Id="467" Count="15" />
       <LineId Id="71" Count="0" />
       <LineId Id="126" Count="1" />
       <LineId Id="329" Count="0" />

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.13">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.16">
   <POU Name="Engine_1DO" Id="{09f1d056-13ec-4f90-a65d-afcf9d2cd229}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK Engine_1DO
 VAR_INPUT
@@ -23,40 +23,77 @@ END_VAR
     <Implementation>
       <ST><![CDATA[{region "RunState"}
     // set real state of engine run into engine structure
-  
+  ioEngStruct.State.Run := iRunning;
 {endregion}
 
 {region "Running time"} 
     // counting running time of engine - (motoseconds in real situation it should be moto hours)
     // detection rising edge of input secimp - should be conected 1Hz internal clock from PLC
+	IF ioEngStruct.State.Run THEN
+		IF iSecImp AND NOT secImpEdge THEN
+			secImpEdge := TRUE;
+			ioEngStruct.State.RT := ioEngStruct.State.RT + 1;
+		ELSIF NOT iSecImp THEN
+			secImpEdge := FALSE; 
+		END_IF
+	END_IF 
 	
+	IF ioEngStruct.Cmd.SetRT >= 0 THEN
+		ioEngStruct.State.RT := ioEngStruct.Cmd.SetRT;
+		ioEngStruct.Cmd.SetRT := -1;
+	END_IF
 {endregion}
 	 
  
 {region "Manual/Automat"}
 	// switching state of engine - automatic or manual control (default state is manual)
-	
+	  	IF ioEngStruct.Cmd.ManCtrl THEN
+      	ioEngStruct.State.ManCtrl := TRUE;
+		ioEngStruct.State.AutCtrl := FALSE;
+	ELSIF ioEngStruct.Cmd.AutCtrl THEN
+        ioEngStruct.State.ManCtrl := FALSE;
+		ioEngStruct.State.AutCtrl := TRUE; 
+    END_IF;
+		 
+	IF (NOT ioEngStruct.State.AutCtrl AND NOT ioEngStruct.State.ManCtrl) THEN
+		ioEngStruct.State.ManCtrl := TRUE;
+	END_IF
+
+	ioEngStruct.Cmd.ManCtrl := FALSE;
+	ioEngStruct.Cmd.AutCtrl := FALSE;
 {endregion}
 	 
 {region "MayRun / MayAutoRun"}
 	// setting auxilary signals (may run, may auto run) - MR AND NOT MAR - eng should be started in manual mode,
     // MAR - should be started in automatic mode
     ioEngStruct.State.MayRun := (ioEngStruct.State.ManCtrl AND NOT(ioEngStruct.State.GenErr));
-	ioEngStruct.State.MayAutoRun := (ioEngStruct.State.AutCtrl AND NOT(ioEngStruct.State.GenErr));
-		 
-			  
+	ioEngStruct.State.MayAutoRun := (ioEngStruct.State.AutCtrl AND NOT(ioEngStruct.State.GenErr));  
 {endregion}
 	 
 {region "ManCtrl"}
 	// processing manual actions - if command is processed, it is set to FALSE even if can't be processed
     // Engine commands are turn off (stop) and turn on (start)
-	
+	IF ioEngStruct.State.ManCtrl AND ioEngStruct.State.MayRun THEN
+		IF ioEngStruct.Cmd.TurnOnMan THEN
+			ioEngStruct.State.RunOut := TRUE;
+		ELSIF ioEngStruct.Cmd.TurnOffMan THEN
+			ioEngStruct.State.RunOut := FALSE;
+		END_IF
+    END_IF;
+	ioEngStruct.Cmd.TurnOnMan := FALSE;
+	ioEngStruct.Cmd.TurnOffMan := FALSE;
 {endregion}
 	 
 {region "AutCtrl"}
 	//if request to run in automatic mode set outputs to right states if MAR
     //AutoRequest shouldn't be reseted to false state
-    
+    IF ioEngStruct.State.AutCtrl AND ioEngStruct.State.MayAutoRun THEN
+		IF ioEngStruct.Cmd.Req2RunAutCtrl THEN
+			ioEngStruct.State.RunOut := TRUE;
+		ELSIF NOT ioEngStruct.Cmd.Req2RunAutCtrl THEN
+			ioEngStruct.State.RunOut := FALSE;
+		END_IF
+    END_IF;
 {endregion}
 	 
 {region "Error states"}
@@ -64,7 +101,22 @@ END_VAR
 	// error - input from digital input of plc - fyzical state of engine 
 	// calculating start up fail - if output is sets to start engine, it's expected feedback from running signal in defined time, if feedback doesn't show in this time, it should be start up fail error
 	// merge of these two error is general error
-	
+	ioEngStruct.StartupFailTimer(IN := ioEngStruct.State.RunOut AND NOT iRunning, PT := ioEngStruct.Time2Start);
+    IF ioEngStruct.StartupFailTimer.Q THEN
+        ioEngStruct.State.StartUpFail := TRUE;
+    END_IF;
+
+    ioEngStruct.State.Err := iError;
+    ioEngStruct.State.GenErr := ioEngStruct.State.StartUpFail OR iError;
+
+    IF ioEngStruct.Cmd.ResetSUF THEN
+        ioEngStruct.State.StartUpFail := FALSE;
+        ioEngStruct.Cmd.ResetSUF := FALSE;
+    END_IF;
+
+    IF ioEngStruct.State.GenErr THEN
+        ioEngStruct.State.RunOut := FALSE;
+    END_IF;
 {endregion}
 	 
 oRun := ioEngStruct.State.RunOut;
@@ -91,29 +143,43 @@ oRun := ioEngStruct.State.RunOut;
       <LineId Id="371" Count="0" />
       <LineId Id="370" Count="0" />
       <LineId Id="45" Count="1" />
-      <LineId Id="68" Count="0" />
+      <LineId Id="426" Count="0" />
+      <LineId Id="429" Count="4" />
+      <LineId Id="427" Count="1" />
+      <LineId Id="435" Count="0" />
+      <LineId Id="434" Count="0" />
+      <LineId Id="436" Count="0" />
+      <LineId Id="438" Count="0" />
+      <LineId Id="437" Count="0" />
       <LineId Id="40" Count="0" />
       <LineId Id="54" Count="0" />
       <LineId Id="366" Count="0" />
       <LineId Id="9" Count="0" />
       <LineId Id="103" Count="0" />
+      <LineId Id="439" Count="12" />
       <LineId Id="109" Count="0" />
       <LineId Id="71" Count="0" />
       <LineId Id="126" Count="1" />
       <LineId Id="130" Count="2" />
       <LineId Id="144" Count="0" />
-      <LineId Id="276" Count="1" />
       <LineId Id="128" Count="0" />
       <LineId Id="159" Count="1" />
       <LineId Id="164" Count="1" />
+      <LineId Id="478" Count="0" />
+      <LineId Id="454" Count="1" />
+      <LineId Id="459" Count="0" />
+      <LineId Id="462" Count="0" />
+      <LineId Id="472" Count="1" />
       <LineId Id="180" Count="0" />
+      <LineId Id="479" Count="0" />
       <LineId Id="161" Count="0" />
       <LineId Id="190" Count="1" />
       <LineId Id="194" Count="1" />
-      <LineId Id="201" Count="0" />
+      <LineId Id="480" Count="6" />
       <LineId Id="192" Count="0" />
       <LineId Id="202" Count="1" />
       <LineId Id="206" Count="3" />
+      <LineId Id="488" Count="14" />
       <LineId Id="205" Count="0" />
       <LineId Id="204" Count="0" />
       <LineId Id="256" Count="0" />
