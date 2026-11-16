@@ -70,7 +70,7 @@ END_VAR
         
         IF ioValStruct.Cmd.StopMan THEN
             ioValStruct.State.OpenOut := FALSE;
-            ioValStruct.State.CloseOut := TRUE;
+            ioValStruct.State.CloseOut := FALSE;
         END_IF;
     END_IF;
     
@@ -108,10 +108,10 @@ END_VAR
     // calculating start up fail - if output is sets to open or close, it's expected feedback from limit sensor in defined time, if feedback doesn't show in this time, it should be start up fail error
     // merge of these two error is general error
     // error is both inputs (open and closed) true state
-    ioValStruct.OpenFailTimer(IN := (ioValStruct.State.OpenOut AND (NOT ioValStruct.State.CloseOut)), PT := ioValStruct.Time2Open);
+    ioValStruct.OpenFailTimer(IN := ioValStruct.State.OpenOut AND NOT ioValStruct.State.CloseOut AND NOT ioValStruct.State.Open, PT := ioValStruct.Time2Open);
 	tempOpenStartupFail := ioValStruct.OpenFailTimer.Q;
 
-    ioValStruct.CloseFailTimer(IN := ((NOT ioValStruct.State.OpenOut) AND ioValStruct.State.CloseOut), PT := ioValStruct.Time2Open);
+    ioValStruct.CloseFailTimer(IN := ioValStruct.State.CloseOut AND NOT ioValStruct.State.OpenOut AND NOT ioValStruct.State.Closed, PT := ioValStruct.Time2Open);
 	tempCloseStartupFail := ioValStruct.CloseFailTimer.Q;
     
    
@@ -187,10 +187,9 @@ oClose := ioValStruct.State.CloseOut;
       <LineId Id="201" Count="0" />
       <LineId Id="192" Count="0" />
       <LineId Id="202" Count="1" />
-      <LineId Id="359" Count="5" />
-      <LineId Id="401" Count="0" />
-      <LineId Id="405" Count="0" />
-      <LineId Id="403" Count="1" />
+      <LineId Id="359" Count="4" />
+      <LineId Id="494" Count="3" />
+      <LineId Id="404" Count="0" />
       <LineId Id="367" Count="0" />
       <LineId Id="371" Count="9" />
       <LineId Id="383" Count="10" />
