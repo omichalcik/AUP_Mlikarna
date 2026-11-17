@@ -1,10 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.13">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.16">
   <GlobalTextList Name="GlobalTextList" Id="{8b92fa73-7e66-4a1d-8aae-2f4ecfc497d6}">
     <XmlArchive>
       <Data>
         <o xml:space="preserve" t="GlobalTextListObject">
           <l n="TextList" t="ArrayList" cet="TextListRow">
+            <o>
+              <v n="TextID">"994"</v>
+              <v n="TextDefault">"%.1f"</v>
+              <l n="LanguageTexts" t="ArrayList" />
+            </o>
             <o>
               <v n="TextID">"815"</v>
               <v n="TextDefault">"ABC"</v>
