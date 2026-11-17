@@ -47,7 +47,7 @@ END_VAR
  
 {region "Manual/Automat"}
 	// switching state of engine - automatic or manual control (default state is manual)
-	  	IF ioEngStruct.Cmd.ManCtrl THEN
+	IF ioEngStruct.Cmd.ManCtrl THEN
       	ioEngStruct.State.ManCtrl := TRUE;
 		ioEngStruct.State.AutCtrl := FALSE;
 	ELSIF ioEngStruct.Cmd.AutCtrl THEN

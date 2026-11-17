@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.13">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.16">
   <POU Name="Heater" Id="{fe81cd62-8fb3-4eb5-8579-8abf8e5327d3}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK Heater
 VAR_INPUT
@@ -42,27 +42,67 @@ ioHeatStruct.State.HeatingOut := ioHeatStruct.PID.fOut;
 	 
 {region "Manual/Automat"}
 // switching state of engine - automatic or manual control (default state is manual)
+	IF ioHeatStruct.Cmd.ManCtrl THEN
+      	ioHeatStruct.State.ManCtrl := TRUE;
+		ioHeatStruct.State.AutCtrl := FALSE;
+	ELSIF ioHeatStruct.Cmd.AutCtrl THEN
+        ioHeatStruct.State.ManCtrl := FALSE;
+		ioHeatStruct.State.AutCtrl := TRUE; 
+    END_IF;
+		 
+	IF (NOT ioHeatStruct.State.AutCtrl AND NOT ioHeatStruct.State.ManCtrl) THEN
+		ioHeatStruct.State.ManCtrl := TRUE;
+	END_IF
 
+	ioHeatStruct.Cmd.ManCtrl := FALSE;
+	ioHeatStruct.Cmd.AutCtrl := FALSE;
 {endregion}
 	 
  
 {region "ManCtrl"}
-// processing manual actions - if command is processed, it is set to FALSE even if can't be processed
-// Engine commands are turn off (stop) and turn on (start)
-
+	// processing manual actions - if command is processed, it is set to FALSE even if can't be processed
+	// Heater commands are turn off (stop) and turn on (start) and power level
+	IF ioHeatStruct.State.ManCtrl THEN
+		IF ioHeatStruct.Cmd.TurnOnMan AND NOT ioHeatStruct.State.GenErr THEN
+			ioHeatStruct.State.EnableOut := TRUE;
+		ELSIF ioHeatStruct.Cmd.TurnOffMan THEN
+			ioHeatStruct.State.EnableOut := FALSE;
+		END_IF
+    END_IF;
+	ioHeatStruct.Cmd.TurnOnMan := FALSE;
+	ioHeatStruct.Cmd.TurnOffMan := FALSE;
 {endregion}
  
 {region "AutCtrl"}
-//if request to run in automatic mode set outputs to right states if MAR
-//AutoRequest shouldn't be reseted to false state
-
+	//if request to run in automatic mode set outputs to right states if MAR
+	//AutoRequest shouldn't be reseted to false state
+    IF ioHeatStruct.State.AutCtrl THEN
+		IF ioHeatStruct.Cmd.Req2RunAutCtrl AND NOT ioHeatStruct.State.GenErr THEN
+			ioHeatStruct.State.EnableOut := TRUE;
+		ELSIF NOT ioHeatStruct.Cmd.Req2RunAutCtrl THEN
+			ioHeatStruct.State.EnableOut := FALSE;
+		END_IF
+    END_IF;
 {endregion}
  
 {region "Error states"}
-// if water temperature is too high, stop heating and generate error
-
+	// if water temperature is too high, stop heating and generate error
+	IF iWaterTemp > 95 THEN
+		ioHeatStruct.State.EnableOut := FALSE;
+		ioHeatStruct.State.GenErr := TRUE;
+	ELSIF iWaterTemp < 90 THEN
+		ioHeatStruct.State.GenErr := FALSE;
+	END_IF
+	ioHeatStruct.State.Err := ioHeatStruct.State.GenErr;
 {endregion}
 	 
+ IF NOT ioHeatStruct.State.EnableOut THEN
+    ioHeatStruct.State.HeatingOut := 0;
+ELSIF ioHeatStruct.State.ManCtrl THEN
+    ioHeatStruct.State.HeatingOut := ioHeatStruct.ParamHeatingPowerManual;
+ELSE
+    ioHeatStruct.State.HeatingOut := ioHeatStruct.PID.fOut;
+END_IF;
  
 oHeaterPower := ioHeatStruct.State.HeatingOut;
 oHeaterEnable := ioHeatStruct.State.EnableOut;]]></ST>
@@ -86,23 +126,33 @@ oHeaterEnable := ioHeatStruct.State.EnableOut;]]></ST>
       <LineId Id="54" Count="0" />
       <LineId Id="9" Count="0" />
       <LineId Id="321" Count="0" />
+      <LineId Id="451" Count="12" />
       <LineId Id="109" Count="0" />
       <LineId Id="71" Count="0" />
       <LineId Id="126" Count="0" />
       <LineId Id="159" Count="1" />
       <LineId Id="337" Count="1" />
+      <LineId Id="464" Count="7" />
       <LineId Id="180" Count="0" />
       <LineId Id="161" Count="0" />
       <LineId Id="190" Count="1" />
-      <LineId Id="349" Count="1" />
-      <LineId Id="201" Count="0" />
+      <LineId Id="349" Count="0" />
+      <LineId Id="472" Count="6" />
+      <LineId Id="350" Count="0" />
       <LineId Id="192" Count="0" />
       <LineId Id="202" Count="1" />
       <LineId Id="354" Count="0" />
       <LineId Id="436" Count="0" />
+      <LineId Id="479" Count="0" />
+      <LineId Id="481" Count="0" />
+      <LineId Id="484" Count="1" />
+      <LineId Id="480" Count="0" />
+      <LineId Id="494" Count="0" />
       <LineId Id="204" Count="0" />
       <LineId Id="434" Count="0" />
+      <LineId Id="488" Count="5" />
       <LineId Id="256" Count="0" />
+      <LineId Id="487" Count="0" />
       <LineId Id="358" Count="0" />
       <LineId Id="260" Count="0" />
     </LineIds>

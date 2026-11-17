@@ -1,21 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.16">
   <DUT Name="THeaterState" Id="{d83d7e51-3b95-4d8a-aaac-7196e3c7e3d2}">
     <Declaration><![CDATA[TYPE THeaterState :
 STRUCT
-	EnableOut : BOOL;
-	HeatingOut : REAL;
-	AutCtrl : BOOL;
-	ManCtrl : BOOL;
-	Err 	: BOOL;
-	StateInt : INT;
-	GenErr : BOOL; //signalisation: error occured
-
-	HeatingPower : REAL;
-	
-
+	EnableOut    : BOOL;  // povel k zapnutí ohřevu -> přes oHeaterEnable na výstup QB0.5
+	HeatingOut   : REAL;  // požadovaný výkon ohřevu 0..100 % (z PID v automatu, z ParamHeatingPowerManual v manuálu) -> EngToRaw -> QW0
+	AutCtrl      : BOOL;  // stav: ohřev je v automatickém režimu (ovládá ho fáze Heating)
+	ManCtrl      : BOOL;  // stav: ohřev je v manuálním režimu (ovládá ho obsluha z vizualizace)
+	Err          : BOOL;  // porucha: přehřátí (teplota nad povolenou mezí)
+	StateInt     : INT;   // číselný stav pro vizualizaci (Running / Stop / RunningAndError / Err)
+	GenErr       : BOOL;  // souhrnná porucha (OR všech poruch ohřevu), při TRUE se ohřev vypne
+	HeatingPower : REAL;  // skutečný výkon ohřevu pro zobrazení (např. v MW: HeatingOut / 100 * 20 MW)
 END_STRUCT
-END_TYPE
-]]></Declaration>
+END_TYPE]]></Declaration>
   </DUT>
 </TcPlcObject>

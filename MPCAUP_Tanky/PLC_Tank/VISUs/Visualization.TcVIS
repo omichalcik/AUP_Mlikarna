@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.13">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.16">
   <Visu Name="Visualization" Id="{a6343251-0068-49ba-9adb-31cb88a6e465}">
     <XmlArchive>
       <Data>
@@ -2901,11 +2901,11 @@
                     </o>
                     <o>
                       <v n="Id">1649127785L</v>
-                      <v n="Value">212</v>
+                      <v n="Value">211</v>
                     </o>
                     <o>
                       <v n="Id">357335551L</v>
-                      <v n="Value">64</v>
+                      <v n="Value">61</v>
                     </o>
                     <o>
                       <v n="Id">2422045748L</v>
