@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.16">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4026.21">
   <POU Name="Draining" Id="{a501d01f-bc41-415b-8bb8-19a7a35d7bf8}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK Draining
 VAR_INPUT
@@ -91,7 +91,7 @@ END_VAR
 {region "Done"}
     //every phase should have finish condition - draining phase - if water level is below requested level
     //after that done state should be setted to 1
-    IF DrainingPhase.State.Running AND (DrainingPhase.WaterLevel <= DrainingPhase.ParamDrainLevel  + 0.17) THEN // edit based on speed of simulation 
+    IF DrainingPhase.State.Running AND (DrainingPhase.WaterLevel <= DrainingPhase.ParamDrainLevel  + 0.05) THEN // edit based on speed of simulation 
         DrainingPhase.Cmd.StopMan := TRUE;
         DrainingPhase.Cmd.StopAut := TRUE;
         DrainingPhase.State.Done := TRUE;
@@ -131,20 +131,5 @@ END_IF;
 //Ponechte pro moznost retezeni volani bloku v LAD
 doEnabled := diEnabled;]]></ST>
     </Implementation>
-    <LineIds Name="Draining">
-      <LineId Id="3" Count="1" />
-      <LineId Id="63" Count="12" />
-      <LineId Id="5" Count="10" />
-      <LineId Id="76" Count="24" />
-      <LineId Id="16" Count="5" />
-      <LineId Id="101" Count="12" />
-      <LineId Id="22" Count="4" />
-      <LineId Id="114" Count="8" />
-      <LineId Id="27" Count="3" />
-      <LineId Id="136" Count="0" />
-      <LineId Id="130" Count="5" />
-      <LineId Id="32" Count="17" />
-      <LineId Id="2" Count="0" />
-    </LineIds>
   </POU>
 </TcPlcObject>
