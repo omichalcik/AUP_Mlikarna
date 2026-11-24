@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.16">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4026.21">
   <POU Name="Heater" Id="{fe81cd62-8fb3-4eb5-8579-8abf8e5327d3}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK Heater
 VAR_INPUT
@@ -14,6 +14,7 @@ VAR_IN_OUT
 END_VAR
 VAR
 	pidParameters : ST_CTRL_PID_PARAMS;
+	pidMode : E_CTRL_MODE;      // ACTIVE when heater is enabled, RESET otherwise
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -29,12 +30,21 @@ pidParameters.bPInTheFeedbackPath := FALSE;
 pidParameters.bARWOnIPartOnly := FALSE;
 pidParameters.tTd := T#100MS; 
 
+
+// PID runs only when heater is enabled - otherwise it is held in reset,
+// so the integral part doesn't wind up while heating is off (no overshoot after start)
+IF ioHeatStruct.State.EnableOut THEN
+	pidMode := E_CTRL_MODE.eCTRL_MODE_ACTIVE;
+ELSE
+	pidMode := E_CTRL_MODE.eCTRL_MODE_RESET;
+END_IF;
+
 ioHeatStruct.PID(
 	fSetpointValue := ioHeatStruct.ParamHeatingSetPointAutomat, 
 	fActualValue := iWaterTemp, 
 	fManSyncValue := ioHeatStruct.ParamHeatingPowerManual,
 	bSync := ioHeatStruct.State.ManCtrl,
-	eMode := E_CTRL_MODE.eCTRL_MODE_ACTIVE, // automatic mode of PID component
+	eMode := pidMode, // automatic mode of PID component
 	stParams := pidParameters);
 
 ioHeatStruct.State.HeatingOut := ioHeatStruct.PID.fOut;
@@ -107,54 +117,5 @@ END_IF;
 oHeaterPower := ioHeatStruct.State.HeatingOut;
 oHeaterEnable := ioHeatStruct.State.EnableOut;]]></ST>
     </Implementation>
-    <LineIds Name="Heater">
-      <LineId Id="382" Count="1" />
-      <LineId Id="372" Count="0" />
-      <LineId Id="385" Count="0" />
-      <LineId Id="387" Count="0" />
-      <LineId Id="386" Count="0" />
-      <LineId Id="388" Count="4" />
-      <LineId Id="384" Count="0" />
-      <LineId Id="370" Count="0" />
-      <LineId Id="374" Count="0" />
-      <LineId Id="373" Count="0" />
-      <LineId Id="375" Count="2" />
-      <LineId Id="380" Count="0" />
-      <LineId Id="394" Count="0" />
-      <LineId Id="393" Count="0" />
-      <LineId Id="40" Count="0" />
-      <LineId Id="54" Count="0" />
-      <LineId Id="9" Count="0" />
-      <LineId Id="321" Count="0" />
-      <LineId Id="451" Count="12" />
-      <LineId Id="109" Count="0" />
-      <LineId Id="71" Count="0" />
-      <LineId Id="126" Count="0" />
-      <LineId Id="159" Count="1" />
-      <LineId Id="337" Count="1" />
-      <LineId Id="464" Count="7" />
-      <LineId Id="180" Count="0" />
-      <LineId Id="161" Count="0" />
-      <LineId Id="190" Count="1" />
-      <LineId Id="349" Count="0" />
-      <LineId Id="472" Count="6" />
-      <LineId Id="350" Count="0" />
-      <LineId Id="192" Count="0" />
-      <LineId Id="202" Count="1" />
-      <LineId Id="354" Count="0" />
-      <LineId Id="436" Count="0" />
-      <LineId Id="479" Count="0" />
-      <LineId Id="481" Count="0" />
-      <LineId Id="484" Count="1" />
-      <LineId Id="480" Count="0" />
-      <LineId Id="494" Count="0" />
-      <LineId Id="204" Count="0" />
-      <LineId Id="434" Count="0" />
-      <LineId Id="488" Count="5" />
-      <LineId Id="256" Count="0" />
-      <LineId Id="487" Count="0" />
-      <LineId Id="358" Count="0" />
-      <LineId Id="260" Count="0" />
-    </LineIds>
   </POU>
 </TcPlcObject>
