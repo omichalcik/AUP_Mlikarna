@@ -14,49 +14,144 @@ VAR_IN_OUT
 	Heater : THeater;
 END_VAR
 VAR
-	pidParameters : ST_CTRL_PID_PARAMS;
+	//pidParameters : ST_CTRL_PID_PARAMS;   // unused - PID is in Heater
+	rtSecImp : R_TRIG;          // rising edge of second impulse
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[{region "Aut/Man"}
-    // switching state of engine - automatic or manual control (default state is manual)
- 
+    // switching state of phase - automatic or manual control (default state is manual)
+    // if both commands come at once, manual has priority (safety)
+    IF HeatingPhase.Cmd.ManCtrl THEN
+        HeatingPhase.State.ManCtrl := TRUE;
+        HeatingPhase.State.AutCtrl := FALSE;
+    ELSIF HeatingPhase.Cmd.AutCtrl THEN
+        HeatingPhase.State.ManCtrl := FALSE;
+        HeatingPhase.State.AutCtrl := TRUE;
+    END_IF;
+
+    // initialization - if neither mode is active, use manual
+    IF NOT HeatingPhase.State.AutCtrl AND NOT HeatingPhase.State.ManCtrl THEN
+        HeatingPhase.State.ManCtrl := TRUE;
+    END_IF;
+
+    // commands are always reset after processing
+    HeatingPhase.Cmd.ManCtrl := FALSE;
+    HeatingPhase.Cmd.AutCtrl := FALSE;
 {endregion}
 
 {region "ManCtrl"}
-    // processing manual actions - if command is processed, it is sets to FALSE even if can't be processed
-        // real states of phase are writed into states in phase structure
-    
-   
+    // processing manual actions - if command is processed, it is set to FALSE even if can't be processed
+    // Phase commands are start, stop, pause and resume
+    // Start  - start heating
+    // Stop   - stop heating
+    // Pause  - stop heating (remaining condition is evaluated again after resume)
+    // Resume - start heating
+    // real states of phase are written into states in phase structure
+    IF HeatingPhase.State.ManCtrl THEN
+        IF HeatingPhase.State.Idle AND HeatingPhase.Cmd.StartMan THEN
+            HeatingPhase.State.Running := TRUE;
+            HeatingPhase.State.Idle := FALSE;
+            HeatingPhase.State.Paused := FALSE;
+            HeatingPhase.State.Done := FALSE;
+        ELSIF HeatingPhase.Cmd.StopMan THEN
+            HeatingPhase.State.Running := FALSE;
+            HeatingPhase.State.Idle := TRUE;
+            HeatingPhase.State.Paused := FALSE;
+        ELSIF HeatingPhase.State.Running AND HeatingPhase.Cmd.PauseMan THEN
+            HeatingPhase.State.Running := FALSE;
+            HeatingPhase.State.Idle := FALSE;
+            HeatingPhase.State.Paused := TRUE;
+        ELSIF HeatingPhase.State.Paused AND HeatingPhase.Cmd.ResumeMan THEN
+            HeatingPhase.State.Running := TRUE;
+            HeatingPhase.State.Idle := FALSE;
+            HeatingPhase.State.Paused := FALSE;
+            HeatingPhase.State.Done := FALSE;
+        END_IF;
+    END_IF;
+
+    HeatingPhase.Cmd.StartMan := FALSE;
+    HeatingPhase.Cmd.StopMan := FALSE;
+    HeatingPhase.Cmd.PauseMan := FALSE;
+    HeatingPhase.Cmd.ResumeMan := FALSE;
 {endregion}
 
 {region "AutCtrl"}
-    // if request to run in automatic mode -> set auto request to heat to 1, if not request to heat 0
-    // commands should be sets to false after their processing
-  
+    // if phase is in automatic mode, process StartAut / StopAut (from MES)
+    // commands are set to FALSE after their processing
+    IF HeatingPhase.State.AutCtrl THEN
+        IF HeatingPhase.State.Idle AND HeatingPhase.Cmd.StartAut THEN
+            HeatingPhase.State.Running := TRUE;
+            HeatingPhase.State.Idle := FALSE;
+            HeatingPhase.State.Done := FALSE;
+        ELSIF HeatingPhase.Cmd.StopAut THEN
+            HeatingPhase.State.Running := FALSE;
+            HeatingPhase.State.Idle := TRUE;
+            HeatingPhase.State.Paused := FALSE;
+        END_IF;
+    END_IF;
+
+    HeatingPhase.Cmd.StartAut := FALSE;
+    HeatingPhase.Cmd.StopAut := FALSE;
 {endregion}
 
 {region "Done"}
-    //every phase should have finish condition - heating phase - if water temp is on requested value for 15 seconds with 1°C hysteresis
-    //after that done state should be setted to 1
+    // every phase should have finish condition - heating phase - water temp must stay
+    // within +-1 °C of requested value for 10 seconds (skripta 10.3.11)
+    // fTime counts seconds in tolerance band; it is reset when temp leaves the band or phase is not running
+    rtSecImp(CLK := iSecImp);   // must be called every cycle, otherwise edges are lost
 
+    IF HeatingPhase.State.Running THEN
+        IF ABS(HeatingPhase.WaterTemp - HeatingPhase.ParamReqTemp) <= 1.0 THEN
+            IF rtSecImp.Q THEN
+                HeatingPhase.fTime := HeatingPhase.fTime + 1;
+            END_IF;
+        ELSE
+            HeatingPhase.fTime := 0;
+        END_IF;
+    ELSE
+        HeatingPhase.fTime := 0;
+    END_IF;
 
+    // finish condition met -> stop phase (processed next cycle) and signal Done
+    IF HeatingPhase.State.Running AND (HeatingPhase.fTime >= 10) THEN
+        HeatingPhase.Cmd.StopMan := TRUE;
+        HeatingPhase.Cmd.StopAut := TRUE;
+        HeatingPhase.State.Done := TRUE;
+    END_IF;
 
-    // command reset done resets done state and than resets command
-  
+    // command reset done resets done state and then resets command
+    IF HeatingPhase.Cmd.ResetDone THEN
+        HeatingPhase.State.Done := FALSE;
+        HeatingPhase.Cmd.ResetDone := FALSE;
+    END_IF;
 {endregion}
 
 {region "States"}
-    //Command valve in cases of states
-    // Running - start heating  
-    // Idle - stop heating
-    // Pause - stop heating (alternative is hold actual temp)
-  
+    // Command heater in cases of states
+    // Running - start heating, pass requested temperature to heater (PID setpoint)
+    // Idle    - stop heating
+    // Paused  - stop heating (alternative would be holding actual temperature)
+    IF HeatingPhase.State.Running THEN
+        Heater.ParamHeatingSetPointAutomat := HeatingPhase.ParamReqTemp;
+        Heater.Cmd.Req2RunAutCtrl := TRUE;
+    ELSE
+        Heater.Cmd.Req2RunAutCtrl := FALSE;
+    END_IF;
 {endregion}
 
-// delault state of phase - if not any state sets state to idle
+// default state of phase - if not any state sets state to idle
 IF NOT HeatingPhase.State.Idle AND NOT HeatingPhase.State.Paused AND NOT HeatingPhase.State.Running THEN
     HeatingPhase.State.Idle := 1;
+END_IF;
+
+// write binary states into int value for visualization
+IF HeatingPhase.State.Idle THEN
+    HeatingPhase.State.Stateint := Global.PhIdle;
+ELSIF HeatingPhase.State.Running THEN
+    HeatingPhase.State.Stateint := Global.PhRunning;
+ELSE
+    HeatingPhase.State.Stateint := Global.PhPause;
 END_IF;
 
 doEnabled := diEnabled;]]></ST>
