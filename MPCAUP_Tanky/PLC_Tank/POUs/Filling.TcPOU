@@ -91,7 +91,7 @@ END_VAR
 {region "Done"}
     //every phase should have finish condition - filling phase - if water level is above requested level
     //after that done state should be set to 1
-    IF FillingPhase.State.Running AND (FillingPhase.WaterLevel >= FillingPhase.ParamFillLevel - 0.05) THEN // edit based on speed of simulation 
+    IF FillingPhase.State.Running AND (FillingPhase.WaterLevel >= FillingPhase.ParamFillLevel - 0.083) THEN // edit based on speed of simulation 
         FillingPhase.Cmd.StopMan := TRUE;
         FillingPhase.Cmd.StopAut := TRUE;
         FillingPhase.State.Done := TRUE;

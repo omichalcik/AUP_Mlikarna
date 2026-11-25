@@ -91,7 +91,7 @@ END_VAR
 {region "Done"}
     //every phase should have finish condition - draining phase - if water level is below requested level
     //after that done state should be setted to 1
-    IF DrainingPhase.State.Running AND (DrainingPhase.WaterLevel <= DrainingPhase.ParamDrainLevel  + 0.05) THEN // edit based on speed of simulation 
+    IF DrainingPhase.State.Running AND (DrainingPhase.WaterLevel <= DrainingPhase.ParamDrainLevel) THEN // edit based on speed of simulation 
         DrainingPhase.Cmd.StopMan := TRUE;
         DrainingPhase.Cmd.StopAut := TRUE;
         DrainingPhase.State.Done := TRUE;

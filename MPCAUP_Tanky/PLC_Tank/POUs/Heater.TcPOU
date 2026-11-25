@@ -18,9 +18,9 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[pidParameters.fKp := 10; //P
-pidParameters.tTn := T#2S; //I
-pidParameters.tTv := T#0.5S; //D
+      <ST><![CDATA[pidParameters.fKp := 1.196; //P
+pidParameters.tTn := T#75.798S; //I
+pidParameters.tTv := T#0S; //D
 pidParameters.tCtrlCycleTime := T#200MS;
 pidParameters.tTaskCycleTime := T#100MS;
 pidParameters.fOutMaxLimit := 100;
@@ -97,10 +97,10 @@ ioHeatStruct.State.HeatingOut := ioHeatStruct.PID.fOut;
  
 {region "Error states"}
 	// if water temperature is too high, stop heating and generate error
-	IF iWaterTemp > 95 THEN
+	IF iWaterTemp > 90 THEN
 		ioHeatStruct.State.EnableOut := FALSE;
 		ioHeatStruct.State.GenErr := TRUE;
-	ELSIF iWaterTemp < 90 THEN
+	ELSIF iWaterTemp < 85 THEN
 		ioHeatStruct.State.GenErr := FALSE;
 	END_IF
 	ioHeatStruct.State.Err := ioHeatStruct.State.GenErr;
